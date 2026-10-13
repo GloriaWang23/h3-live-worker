@@ -29,7 +29,8 @@ def model_dir():
 def handler(job):
     i = job["input"]
     url, tok, sid = i["control_url"].rstrip("/"), i["pod_token"], i["session_id"]
-    req = urllib.request.Request(f"{url}/api/pod/bundle", headers={"X-Pod-Token": tok, "X-Session": sid})
+    # 自定义 User-Agent：Cloudflare 默认拦截 Python-urllib（错误码 1010）
+    req = urllib.request.Request(f"{url}/api/pod/bundle", headers={"X-Pod-Token": tok, "X-Session": sid, "User-Agent": "h3live-worker/1.0"})
     data = urllib.request.urlopen(req, timeout=120).read()
     shutil.rmtree(H, ignore_errors=True)
     os.makedirs(H)
