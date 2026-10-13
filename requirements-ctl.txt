@@ -1,0 +1,9 @@
+# 直播控制服务（cloud_pod）与 serverless 入口用的小环境，和 ComfyUI 环境分开
+runpod==1.11.0
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+httpx==0.28.1
+pillow==11.3.0
+python-multipart==0.0.20
+itsdangerous==2.2.0
+cos-python-sdk-v5==1.9.38

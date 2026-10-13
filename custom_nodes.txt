@@ -1,0 +1,11 @@
+# 目录名 仓库 提交（与 2026-10-13 GPU 机器上 comfy.tar + custom_nodes_extra 完全一致）
+ComfyUI-FlashVSR_Ultra_Fast https://github.com/lihaoyun6/ComfyUI-FlashVSR_Ultra_Fast.git 4820b3f02347bddcbbb9a5a85ab7638fe976366e
+ComfyUI-H3-Motion-Context https://github.com/NikoDemon80/ComfyUI-H3-Motion-Context.git 5335715abe54c1a9bfbe3494da29aae3e8635ce3
+ComfyUI-KJNodes https://github.com/kijai/ComfyUI-KJNodes.git d7641533d6634eb05f8570c980fce8fc8528dc7b
+ComfyUI-MiniMax-H3-PDD-Acc https://github.com/Jalen-Brunson/ComfyUI-MiniMax-H3-PDD-Acc.git 311a65dd53832d8a5f8177a9d5fb923c09e35a90
+ComfyUI-Ref2VA-VSA https://github.com/Kablex/ComfyUI-Ref2VA-VSA.git 1b370329b1740a6cdf5d5df4707da6ba5ed777b6
+ComfyUI-VideoHelperSuite https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git 4d907bee61e92c2e65af3bd6383a4e4d356126d1
+ComfyUI_MinimaxH3HybridLoader https://github.com/scottmudge/ComfyUI_MinimaxH3HybridLoader.git a44c69b02242e41fbd01e22abe2a492adc853038
+Comfyui_Minimax_h3_latent_Upscaler https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler.git 40316cf008b2fd8663263270669eb4da23f89d2c
+buqi-minimax-h3-multigpu https://github.com/buqi-code/buqi-minimax-h3-multigpu.git a864277f81ee7609972eb64cd1fb086f239d4c99
+comfyui-SelfLift https://github.com/facok/comfyui-SelfLift.git 835c3cf7919410f71f414688f049c6ca497789d0
