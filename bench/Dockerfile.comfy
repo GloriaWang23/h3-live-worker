@@ -1,0 +1,14 @@
+# h3-live 精简测速镜像（只给测速 pod 用）：serverless 镜像（4.5 GB，ComfyUI 环境逐字节一致）+ SSH + 多卡插件
+#   + Comfy-H3-MultiStream（线程分卡的序列并行，支持稀疏注意力；固定提交）+ venv-comfy 补 pip（Spark-H3 等插件安装要用）
+# 原 :bench 镜像 19 GB（含 15 GB 的 SGLang），远端机房拉镜像很慢；ComfyUI 测试用这个。
+FROM ghcr.io/gloriawang23/h3-live-worker:sha-6a781e2
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends openssh-server rsync tmux \
+    && rm -rf /var/lib/apt/lists/* && mkdir -p /run/sshd
+RUN VIRTUAL_ENV=/opt/venv-comfy uv pip install -q pip && /opt/venv-comfy/bin/python -m pip --version
+RUN git clone -q https://github.com/martonsagi/Comfy-H3-MultiStream /opt/ComfyUI/custom_nodes/ComfyUI-H3-MultiStream \
+    && git -C /opt/ComfyUI/custom_nodes/ComfyUI-H3-MultiStream checkout -q 4e4381ff2cdb
+RUN cd /opt/ComfyUI && timeout 600 /opt/venv-comfy/bin/python main.py --quick-test-for-ci --cpu 2>&1 | tee /tmp/ci.log \
+    && ! grep -q "IMPORT FAILED" /tmp/ci.log
+COPY bench/start.sh /opt/bench/start.sh
+CMD ["bash", "/opt/bench/start.sh"]
