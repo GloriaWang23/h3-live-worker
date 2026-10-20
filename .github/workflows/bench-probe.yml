@@ -20,11 +20,11 @@ jobs:
       - name: probe
         run: |
           docker pull "$IMAGE"
-          docker run -d --name p -p 8188:8188 --entrypoint bash "$IMAGE" -c \
+          docker run -d --name probe -p 8188:8188 --entrypoint bash "$IMAGE" -c \
             'cd /opt/ComfyUI && /opt/venv-comfy/bin/python main.py --cpu --listen 0.0.0.0 --port 8188 > /tmp/comfy.log 2>&1'
           for i in $(seq 1 120); do curl -fs localhost:8188/object_info > object_info.json && break; sleep 5; done
-          docker exec p bash -c 'for c in python3 python /opt/venv-ctl/bin/python /opt/venv-comfy/bin/python ffmpeg ffprobe curl sha256sum timeout seq nvidia-smi git rsync; do printf "%s=%s\n" "$c" "$(command -v $c || echo MISSING)"; done' > tools.txt
-          docker exec p tail -60 /tmp/comfy.log > comfy_tail.log || true
+          docker exec probe bash -c 'for c in python3 python /opt/venv-ctl/bin/python /opt/venv-comfy/bin/python ffmpeg ffprobe curl sha256sum timeout seq nvidia-smi git rsync; do printf "%s=%s\n" "$c" "$(command -v $c || echo MISSING)"; done' > tools.txt
+          docker exec probe tail -60 /tmp/comfy.log > comfy_tail.log || true
           ls -la object_info.json; cat tools.txt
       - uses: actions/upload-artifact@v4
         with:
