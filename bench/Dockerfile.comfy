@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssh-server 
 RUN VIRTUAL_ENV=/opt/venv-comfy uv pip install -q pip && /opt/venv-comfy/bin/python -m pip --version
 COPY bench/plugins.lock.json bench/prepare_plugins.py /opt/bench/
 RUN /opt/venv-comfy/bin/python /opt/bench/prepare_plugins.py
+# ComfyUI PR #17157（10/18 合入上游 ce42de5）：识别自带 PDD 输出头的模型（FastH3-OmniRef 8 步）。只改 minimax 模型与识别两处共 15 行，原样补到 v0.39
+COPY bench/comfyui_pr17157_pdd.patch /opt/bench/
+RUN cd /opt/ComfyUI && (git apply /opt/bench/comfyui_pr17157_pdd.patch || patch -p1 < /opt/bench/comfyui_pr17157_pdd.patch) \
+    && grep -q "pdd_steps=pdd_steps" comfy/ldm/minimax/model.py && grep -q '"pdd_steps", 1' comfy/model_detection.py
 RUN cd /opt/ComfyUI && timeout 600 /opt/venv-comfy/bin/python main.py --quick-test-for-ci --cpu 2>&1 | tee /tmp/ci.log \
     && ! grep -qE "IMPORT FAILED|Cannot import .*custom_nodes" /tmp/ci.log
 COPY bench/start.sh /opt/bench/start.sh

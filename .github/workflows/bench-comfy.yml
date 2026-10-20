@@ -4,7 +4,7 @@ name: build bench-comfy image
 on:
   push:
     branches: [bench]
-    paths: ["bench/Dockerfile.comfy", "bench/start.sh", "bench/plugins.lock.json", "bench/prepare_plugins.py", ".github/workflows/bench-comfy.yml"]
+    paths: ["bench/Dockerfile.comfy", "bench/start.sh", "bench/plugins.lock.json", "bench/prepare_plugins.py", "bench/comfyui_pr17157_pdd.patch", ".github/workflows/bench-comfy.yml"]
   workflow_dispatch:
 
 permissions:
@@ -30,6 +30,6 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/gloriawang23/h3-live-worker:bench-comfy-attn-20261020
+            ghcr.io/gloriawang23/h3-live-worker:bench-comfy-omni-20261020
             ghcr.io/gloriawang23/h3-live-worker:bench-comfy-${{ github.sha }}
           provenance: false
