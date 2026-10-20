@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "updated": "2026-10-19",
+  "multistream": {
+    "repo": "martonsagi/Comfy-H3-MultiStream",
+    "commit": "f2a39fa5406163c30424831664b2d607c211357a"
+  },
+  "veda": {
+    "repo": "veda-sparse/Veda-on-ComfyUI",
+    "commit": "67e4eb5541b648555563144401ebaba832bd73ec"
+  },
+  "spark": {
+    "release": "comfyui-v0.1.4",
+    "url": "https://github.com/zechengtang/Spark-H3/releases/download/comfyui-v0.1.4/ComfyUI-Spark-H3-0.1.4-linux-x86_64-sm120-cu130.zip",
+    "sha256": "c3f09540ce90841c54c42717e89b3fe80b8805ced345e4af9d175115ab8ae488",
+    "wheel": "comfy_kitchen-0.2.37+spark.h3.sm120.cu130.1-cp312-abi3-linux_x86_64.whl"
+  },
+  "veda_predictor": {
+    "repo": "Veda-Sparse/Minimax-H3-R2VA-Veda-Preview",
+    "commit": "1598b407905b7c0af85aa0c13acdfa6f01ff2982",
+    "file": "minimax_h3_r2va_veda_preview_fp8.safetensors",
+    "size": 275415752,
+    "sha256": "23edace948693772be33d5cc945d302d2b037a29bd44bd57071bfbdd8b02517d"
+  }
+}
