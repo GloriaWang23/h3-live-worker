@@ -1,0 +1,28 @@
+name: probe vlm image
+# 开机前检查：RunPod 官方 vLLM 镜像能否跑 Qwen3-Omni（架构注册、视频 / 音频依赖），不加载权重
+on:
+  push:
+    branches: [bench-omni-20261020]
+    paths: [".github/workflows/vlm-probe.yml"]
+env:
+  IMAGE: runpod/worker-v1-vllm:v2.28.0
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: free disk
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; df -h /
+      - name: probe
+        run: |
+          docker pull "$IMAGE"
+          docker run --rm --entrypoint bash "$IMAGE" -c '
+            set +e
+            python3 -c "import vllm, transformers, torch; print(\"vllm\", vllm.__version__, \"transformers\", transformers.__version__, \"torch\", torch.__version__)"
+            python3 -c "from vllm.model_executor.models.registry import ModelRegistry as R; a=R.get_supported_archs(); print(\"Qwen3-Omni 架构:\", [x for x in a if \"Omni\" in x])"
+            python3 -c "from transformers import AutoConfig; print(\"transformers 认识 qwen3_omni_moe:\", \"qwen3_omni_moe\" in __import__(\"transformers\").models.auto.configuration_auto.CONFIG_MAPPING_NAMES)"
+            for m in librosa soundfile av decord cv2 qwen_omni_utils; do python3 -c "import $m; print(\"$m OK\", getattr($m, \"__version__\", \"\"))" 2>/dev/null || echo "$m 缺"; done
+            for c in ffmpeg ffprobe; do command -v $c >/dev/null && echo "$c OK" || echo "$c 缺"; done
+            python3 -m vllm.entrypoints.openai.api_server --help 2>/dev/null | grep -oE "\-\-(limit-mm-per-prompt|reasoning-parser|allowed-local-media-path|allowed-media-domains|mm-processor-kwargs|media-io-kwargs)" | sort -u
+          ' | tee probe.txt
+      - uses: actions/upload-artifact@v4
+        with: {name: vlm-probe, path: probe.txt}
