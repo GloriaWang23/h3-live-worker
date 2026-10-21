@@ -1,11 +1,12 @@
 name: build h3-vlm image
+# h3-vlm：官方 worker-vllm + 预处理 handler（vlm/h3_vlm_handler.py）。先在 runner 上跑单元测试，构建推 GHCR，再在镜像里跑一遍测试和探针（CPU，不加载权重）。
 on:
   push:
     branches: [bench-omni-20261020]
-    paths: ["vlm/Dockerfile", ".github/workflows/vlm-image.yml"]
+    paths: ["vlm/**", ".github/workflows/vlm-image.yml"]
 permissions: {contents: read, packages: write}
 env:
-  TAG: ghcr.io/gloriawang23/h3-vlm:20261021b
+  TAG: ghcr.io/gloriawang23/h3-vlm:20261021c
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,6 +14,8 @@ jobs:
       - name: free disk
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; df -h /
       - uses: actions/checkout@v4
+      - name: unit tests (runner)
+        run: sudo apt-get install -y -qq ffmpeg >/dev/null && cd vlm && python3 -m unittest discover -s tests -v
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with: {registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}"}
@@ -21,35 +24,17 @@ jobs:
           context: vlm
           platforms: linux/amd64
           push: true
-          load: false
           tags: |
             ${{ env.TAG }}
             ghcr.io/gloriawang23/h3-vlm:${{ github.sha }}
           provenance: false
-      - name: CPU probe（不加载权重）
+      - name: tests + probe inside the image
         run: |
           docker pull "$TAG"
-          docker inspect "$TAG" --format 'ENTRYPOINT={{json .Config.Entrypoint}} CMD={{json .Config.Cmd}}'
-          docker run --rm -e HF_HUB_OFFLINE=0 --entrypoint bash "$TAG" -c '
-            set +e
-            env | grep -E "^(HF_HOME|HUGGINGFACE_HUB_CACHE|BASE_PATH|VLLM_CACHE_ROOT)=" | sort
-            python3 -c "import vllm, transformers, torch, av; print(\"vllm\", vllm.__version__, \"transformers\", transformers.__version__, \"torch\", torch.__version__, \"av\", av.__version__)"
-            python3 -c "from vllm.model_executor.models.registry import ModelRegistry as R; a=R.get_supported_archs(); print(\"架构:\", [x for x in a if x in (\"Qwen3OmniMoeForConditionalGeneration\",\"Qwen3_5MoeForConditionalGeneration\")])"
-            apt-get install -y -qq ffmpeg >/dev/null 2>&1 || (apt-get update -qq >/dev/null && apt-get install -y -qq ffmpeg >/dev/null 2>&1)
-            ffmpeg -v error -f lavfi -i testsrc=size=320x240:rate=24 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 3 -c:v libx264 -c:a aac -shortest /tmp/t.mp4
-            python3 - <<PY
-          import asyncio
-          from vllm.multimodal.utils import MediaConnector
-          mc = MediaConnector(allowed_local_media_path="/tmp")
-          a, sr = mc.fetch_audio("file:///tmp/t.mp4")
-          print("从 mp4 抽音轨 OK:", getattr(a, "shape", None), sr)
-          v = mc.fetch_video("file:///tmp/t.mp4")
-          print("读视频 OK:", type(v), getattr(v[0], "shape", None) if isinstance(v, tuple) else None)
-          PY
-            python3 -c "from transformers import AutoProcessor; p=AutoProcessor.from_pretrained(\"Sabomako/Qwen3-Omni-30B-A3B-Thinking-heretic\", revision=\"71f2b240f2d721456fa0ce7efe50663c034de450\"); print(\"Omni 处理器 OK:\", type(p).__name__)"
-            python3 -c "from transformers import AutoProcessor; p=AutoProcessor.from_pretrained(\"huihui-ai/Huihui-Qwen3.6-35B-A3B-abliterated\", revision=\"8f0ee727aff5e771ea72466d64d13ecd851d2cc7\"); print(\"Qwen3.6 处理器 OK:\", type(p).__name__)"
-            vllm serve --help=all 2>/dev/null | grep -oE "\-\-(limit-mm-per-prompt|media-io-kwargs|mm-processor-kwargs|reasoning-parser|allowed-local-media-path|max-model-len)" | sort -u
-            python3 -c "import os,glob; print(\"handler:\", glob.glob(\"/src/*.py\")[:8])"
-          ' 2>&1 | tee probe.txt
+          docker run --rm -v "$PWD/vlm:/w" -w /w --entrypoint python3 "$TAG" -m unittest discover -s tests -v 2>&1 | tee probe.txt
+          docker run --rm --entrypoint bash "$TAG" -c '
+            python3 -c "import vllm, av; print(\"vllm\", vllm.__version__, \"av\", av.__version__)"
+            cd /src && MODEL_NAME=x python3 -c "from args_builder import build_vllm_args as b; a=b(); i=a.index(\"--allowed-local-media-path\") if \"--allowed-local-media-path\" in a else -1; print(\"本地素材目录参数:\", a[i:i+2] if i>=0 else \"缺失\")"
+            head -2 /src/handler.py; ls /src' 2>&1 | tee -a probe.txt
       - uses: actions/upload-artifact@v4
         with: {name: vlm-image-probe, path: probe.txt}
