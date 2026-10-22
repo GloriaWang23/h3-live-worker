@@ -1,0 +1,40 @@
+name: probe bench image (r18 nodes)
+# 第十八轮开机前检查（CPU）：在测速镜像里跑 bench/setup_r18_nodes.sh（LightVAE / ComfyUI-PTD / 淘宝 PTD 包），起 ComfyUI，导出 object_info
+on:
+  push:
+    branches: [bench-r18-probe]
+  workflow_dispatch:
+env:
+  IMAGE: ghcr.io/gloriawang23/h3-live-worker:bench-comfy-omni-20261020
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: free disk
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; df -h /
+      - name: probe
+        run: |
+          docker pull "$IMAGE"
+          docker run -d --name probe -p 8188:8188 -v "$PWD/bench:/bench" --entrypoint bash "$IMAGE" -c \
+            'bash /bench/setup_r18_nodes.sh > /tmp/setup.log 2>&1; echo "setup rc=$?" >> /tmp/setup.log; cd /opt/ComfyUI && /opt/venv-comfy/bin/python main.py --cpu --disable-dynamic-vram --listen 0.0.0.0 --port 8188 > /tmp/comfy.log 2>&1'
+          for i in $(seq 1 180); do curl -fs localhost:8188/object_info > object_info.json && break; sleep 5; done
+          docker exec probe cat /tmp/setup.log > setup.log || true
+          docker exec probe tail -150 /tmp/comfy.log > comfy_tail.log || true
+          tail -20 setup.log
+          python3 - <<'PY'
+          import json
+          d = json.load(open("object_info.json"))
+          keys = [k for k in d if any(s in k.lower() for s in ("lightvae", "ptd", "h3live", "selflift"))]
+          print("NODES:", keys)
+          for k in keys:
+              print(k, json.dumps(d[k].get("input", {}).get("required", {}))[:600])
+          PY
+          grep -iE "IMPORT FAILED|Traceback|Error" comfy_tail.log | head -20 || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: probe-r18
+          path: |
+            object_info.json
+            setup.log
+            comfy_tail.log
