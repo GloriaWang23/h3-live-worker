@@ -1,0 +1,23 @@
+name: probe bench-sgl for H100 (sm_90)
+# 2×H100 SXM 开机前检查：扩展是否含 sm_90 代码、SGLang JIT 能否编 sm_90、libx264 可用（bench/check_h100.sh）
+on:
+  push:
+    branches: [bench-r19-probe]
+    paths: ["bench/check_h100.sh", ".github/workflows/bench-h100-probe.yml"]
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: free disk
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - name: check
+        run: |
+          docker run --rm -v "$PWD/bench:/bench" --entrypoint bash ghcr.io/gloriawang23/h3-live-worker:bench-sgl-20261023 /bench/check_h100.sh 2>&1 | tee h100.log | tail -120
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: h100-probe
+          path: h100.log
