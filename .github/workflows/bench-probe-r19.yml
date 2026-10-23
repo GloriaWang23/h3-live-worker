@@ -37,6 +37,7 @@ jobs:
           grep -iE "IMPORT FAILED|Traceback|Error" comfy_tail.log | head -20 || true
       - name: check 10Eros pruned AdaLN load (meta device)
         run: |
+          sudo sysctl -w vm.overcommit_memory=1   # 稀疏 21 GB 假文件要整段 mmap，CI 只有 16 GB 内存
           docker exec probe bash -c 'cd /tmp && /opt/venv-comfy/bin/python /bench/check_sgl_adaln.py /bench/hdr_10eros.json' 2>&1 | tee adaln_check.log | grep -vE "^\s*$" | tail -40
           grep -q "R19_ADALN_CHECK ok" adaln_check.log
       - uses: actions/upload-artifact@v4
