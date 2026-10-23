@@ -42,7 +42,8 @@ def fake_load(model_cls, init_params, checkpoint_key_filter=None, **kw):
     # 与 fsdp_load 一致：传模型参数名，INT8 的 weight_scale 不会被改名成 FP8 的 weight_scale_inv
     mapper = get_param_names_mapping(model_cls.param_names_mapping, valid_target_names=names)
     keys = [k for k in hdr if k != "__metadata__" and (checkpoint_key_filter is None or checkpoint_key_filter(k))]
-    mapped = {mapper(k)[0] for k in keys}
+    # hf_to_custom_state_dict 同规则：原名本身是模型参数、改名后不是，就用原名
+    mapped = {k if (k in names and mapper(k)[0] not in names) else mapper(k)[0] for k in keys}
     result["ckpt_not_in_model"] = sorted(mapped - names)
     result["model_not_in_ckpt"] = sorted(n for n in names - mapped if not n.startswith("rope."))
     return model
