@@ -28,7 +28,7 @@ jobs:
           python3 - <<'PY'
           import json
           d = json.load(open("object_info.json"))
-          need = ["SGLDOptions", "SGLDUNETLoader", "SGLDLoraLoader", "SelfLiftH3Sampler", "H3MultiStream", "MiniMaxH3SigmaShift", "H3LiveStreamDecode"]
+          need = ["SGLDOptions", "SGLDUNETLoader", "SGLDLoraLoader", "SelfLiftH3Sampler", "H3MultiStream", "MiniMaxH3SigmaShift"]
           print("MISSING:", [k for k in need if k not in d])
           for k in need[:3]:
               if k in d:

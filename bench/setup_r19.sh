@@ -10,7 +10,7 @@ t0=$(date +%s)
 $PY -m pip freeze --exclude-editable | grep -v "^-e \|@ file:" > $T/keep.txt
 echo "保持原版本的包：$(wc -l < $T/keep.txt) 个"
 VIRTUAL_ENV=/opt/venv-comfy uv pip install --python $PY --overrides $T/keep.txt \
-  --extra-index-url https://download.pytorch.org/whl/cu130 --index-strategy unsafe-best-match \
+  --extra-index-url https://download.pytorch.org/whl/cu130 --index-strategy unsafe-best-match --prerelease=allow \
   "sglang[diffusion]==$SGL" "sol-attn @ git+https://github.com/NVlabs/Sana.git@$SOL#subdirectory=techniques/sparse_backends" 2>&1 | tail -25
 echo "安装用时 $(( $(date +%s)-t0 )) s"
 $PY -m pip freeze --exclude-editable | grep -v "^-e \|@ file:" > $T/after.txt
