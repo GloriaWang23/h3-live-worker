@@ -13,6 +13,9 @@ import types
 
 import torch
 
+# CI 无显卡：vsa 等在导入时查算力，假装是 Blackwell（sm_120），不影响 meta 建模
+torch.cuda.get_device_capability = lambda *a, **k: (12, 0)
+
 hdr = json.load(open(sys.argv[1]))
 end = max(v["data_offsets"][1] for k, v in hdr.items() if k != "__metadata__")
 raw = json.dumps(hdr, separators=(",", ":")).encode()
