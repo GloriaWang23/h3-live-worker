@@ -2,9 +2,7 @@ name: probe bench image (r19 sglang)
 # 第十九轮开机前检查（CPU）：在测速镜像里跑 bench/setup_r19.sh（sglang[diffusion] 0.5.22 + sol-attn，原有包版本不变），
 # 起 ComfyUI，确认 SGLD 插件节点与原有节点都能加载，导出 object_info（本地据此校验 r19 的图）
 on:
-  push:
-    branches: [bench-r19-probe]
-  workflow_dispatch:
+  workflow_dispatch:   # 只手动触发（同分支其他提交不再重复跑）
 env:
   IMAGE: ghcr.io/gloriawang23/h3-live-worker:bench-comfy-omni-20261020
 jobs:
