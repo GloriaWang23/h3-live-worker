@@ -47,6 +47,12 @@ def fake_load(model_cls, init_params, checkpoint_key_filter=None, **kw):
     return model
 
 
+from sglang.multimodal_gen.runtime.distributed import parallel_state as ps
+
+# 单进程 gloo 并行组（tp=sp=1），建模型时要查 tp/sp 大小
+ps.init_distributed_environment(world_size=1, rank=0, local_rank=0, backend="gloo",
+                                distributed_init_method="tcp://127.0.0.1:29555", device_id=torch.device("cpu"))
+ps.initialize_model_parallel(backend="gloo")
 spec_mod.maybe_load_fsdp_model = fake_load
 spec_mod.resolve_precision = lambda *a, **k: torch.bfloat16
 tlu.resolve_transformer_gguf_to_load = lambda *a, **k: None
