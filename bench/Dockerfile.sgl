@@ -1,0 +1,16 @@
+# 第二十轮 SGLang 测速镜像：bench-comfy-omni-20261020 + CUDA 13.0 编译工具（nvcc/头文件/驱动桩库）+ ninja
+#   + sglang[diffusion]==0.5.22 + sol-attn（setup_r19.sh，原有包版本不变）+ 剪枝 AdaLN 补丁（patch_sgl_adaln.py）。
+# 为什么要 nvcc：SGLang 的 H3 DiT 前向用运行时 JIT 内核（fused qknorm 等，nvcc + ninja 现编）；r20 首次去噪报 "No such file or directory: 'ninja'"。
+FROM ghcr.io/gloriawang23/h3-live-worker:bench-comfy-omni-20261020
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+ENV DEBIAN_FRONTEND=noninteractive
+# torch 是 cu130 → 编译工具锁 13.0，与运行库同版本
+RUN curl -fsSL -o /tmp/keyring.deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb \
+    && dpkg -i /tmp/keyring.deb && rm /tmp/keyring.deb && apt-get update \
+    && apt-get install -y --no-install-recommends cuda-nvcc-13-0 cuda-cudart-dev-13-0 cuda-driver-dev-13-0 cuda-cccl-13-0 ninja-build \
+    && rm -rf /var/lib/apt/lists/* && /usr/local/cuda-13.0/bin/nvcc --version && ninja --version
+ENV CUDA_HOME=/usr/local/cuda-13.0 PATH=/usr/local/cuda-13.0/bin:$PATH SGLANG_ENABLE_JIT_DEEPGEMM=0 SGLANG_JIT_CACHE_DIR=/opt/sglang-jit
+COPY bench/setup_r19.sh bench/patch_sgl_adaln.py /opt/bench/
+RUN bash /opt/bench/setup_r19.sh 2>&1 | tail -15 && /opt/venv-comfy/bin/python /opt/bench/patch_sgl_adaln.py
+COPY bench/start.sh /opt/bench/start.sh
+CMD ["bash", "/opt/bench/start.sh"]
