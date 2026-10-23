@@ -39,7 +39,8 @@ def fake_load(model_cls, init_params, checkpoint_key_filter=None, **kw):
     with torch.device("meta"):
         model = model_cls(**init_params)
     names = set(model.state_dict().keys())
-    mapper = get_param_names_mapping(model_cls.param_names_mapping)
+    # 与 fsdp_load 一致：传模型参数名，INT8 的 weight_scale 不会被改名成 FP8 的 weight_scale_inv
+    mapper = get_param_names_mapping(model_cls.param_names_mapping, valid_target_names=names)
     keys = [k for k in hdr if k != "__metadata__" and (checkpoint_key_filter is None or checkpoint_key_filter(k))]
     mapped = {mapper(k)[0] for k in keys}
     result["ckpt_not_in_model"] = sorted(mapped - names)
