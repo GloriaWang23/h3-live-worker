@@ -25,8 +25,15 @@ try:
     _jit_qknorm_module(128, torch.bfloat16); print("qknorm sm_90 编译并加载成功")
 except Exception as e:
     print("加载异常（CPU 上预期）:", type(e).__name__, str(e)[:200])
+try:
+    from sglang.kernels.ops.gemm.convrot_int8 import _jit_convrot_int8_module
+    _jit_convrot_int8_module(); print("convrot_int8 sm_90 编译并加载成功")
+except Exception as e:
+    print("convrot_int8 异常:", type(e).__name__, str(e)[:300])
 libs = glob.glob("/tmp/jit90/**/*.so", recursive=True)
-print("产物:", libs[:2]); print("H100_JIT_CHECK", "ok" if libs and any("sm90" in p for p in libs) else "FAIL")
+print("convrot 产物:", [p for p in libs if "convrot" in p][:2])
+print("产物:", libs[:2]); print("H100_JIT_CHECK", "ok" if any("sm90" in p and "qknorm" in p for p in libs) and any("convrot" in p for p in libs) else "FAIL")
 PYEOF
+echo "== comfy_kitchen 后端（H100 上 cuda 后端没有 sm_90，看 eager/triton 能否兜底 int8）"; $PY -c "import comfy_kitchen as ck; print([ (n, b) for n, b in ck.list_backends().items()] if hasattr(ck, \"list_backends\") else dir(ck))" 2>&1 | cut -c1-600
 echo "== ③ ffmpeg 编码器"; ffmpeg -hide_banner -encoders 2>/dev/null | grep -E "libx264|h264_nvenc"
 echo "== sol-attn 后端支持的架构（源码关键字）"; grep -rnE "sm_?90|capability|major *[<>=]" $SP/sol_attn 2>/dev/null | grep -v test | head -15
