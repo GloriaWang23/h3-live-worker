@@ -27,5 +27,7 @@ PY
 # 插件随 wheel 发布：软链进 custom_nodes（目录名照 README）
 SP=$($PY -c "import sglang.multimodal_gen, os; print(os.path.dirname(sglang.multimodal_gen.__file__))")
 ln -sfn $SP/apps/ComfyUI_SGLDiffusion $C/custom_nodes/ComfyUI_SGLDiffusion
+# 补丁：ComfyUI 单文件加载剪枝 AdaLN（10Eros 的 adaln_basis/adaln_mean），见 patch_sgl_adaln.py
+$PY "$(dirname "$0")/patch_sgl_adaln.py"
 $PY -c "import torch, sglang; from sglang.multimodal_gen import DiffGenerator; import sol_attn; print('sglang', sglang.__version__, 'torch', torch.__version__, 'import ok')"
 echo R19_SGL_OK
